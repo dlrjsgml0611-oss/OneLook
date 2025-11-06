@@ -36,57 +36,65 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 자막 추출
-    try {
-      const transcriptArray = await YoutubeTranscript.fetchTranscript(videoId, {
-        lang: 'ko',
-      })
+    // 자막 추출 - 여러 언어 시도
+    const languagesToTry = ['ko', 'en', 'en-US', 'en-GB']
+    let lastError: any = null
 
-      // 자막 텍스트만 추출하여 합치기
-      const subtitles = transcriptArray
-        .map((item: any) => item.text)
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-
-      if (!subtitles) {
-        return NextResponse.json(
-          { error: '자막을 찾을 수 없습니다. 한국어 자막이 있는지 확인해주세요.' },
-          { status: 404 }
-        )
-      }
-
-      return NextResponse.json({ subtitles })
-    } catch (error) {
-      console.error('Transcript fetch error:', error)
-
-      // 한국어 자막이 없는 경우 영어 자막 시도
+    for (const lang of languagesToTry) {
       try {
+        console.log(`Trying to fetch transcript with lang: ${lang}`)
         const transcriptArray = await YoutubeTranscript.fetchTranscript(videoId, {
-          lang: 'en',
+          lang: lang,
         })
 
+        // 자막 텍스트만 추출하여 합치기
         const subtitles = transcriptArray
           .map((item: any) => item.text)
           .join(' ')
           .replace(/\s+/g, ' ')
           .trim()
 
-        if (!subtitles) {
-          return NextResponse.json(
-            { error: '자막을 찾을 수 없습니다.' },
-            { status: 404 }
-          )
+        if (subtitles) {
+          console.log(`Successfully fetched ${lang} transcript`)
+          return NextResponse.json({ subtitles })
         }
-
-        return NextResponse.json({ subtitles })
-      } catch (fallbackError) {
-        return NextResponse.json(
-          { error: '자막을 추출할 수 없습니다. 자막이 있는 동영상인지 확인해주세요.' },
-          { status: 500 }
-        )
+      } catch (error) {
+        console.error(`Failed to fetch ${lang} transcript:`, error)
+        lastError = error
+        // 다음 언어 시도
+        continue
       }
     }
+
+    // 모든 언어 시도 실패 - 언어 옵션 없이 기본 자막 시도
+    try {
+      console.log('Trying to fetch transcript without language option')
+      const transcriptArray = await YoutubeTranscript.fetchTranscript(videoId)
+
+      const subtitles = transcriptArray
+        .map((item: any) => item.text)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+      if (subtitles) {
+        console.log('Successfully fetched default transcript')
+        return NextResponse.json({ subtitles })
+      }
+    } catch (error) {
+      console.error('Failed to fetch default transcript:', error)
+      lastError = error
+    }
+
+    // 모든 시도 실패
+    console.error('All transcript fetch attempts failed:', lastError)
+    return NextResponse.json(
+      {
+        error: '자막을 추출할 수 없습니다. 자막이 있는 동영상인지 확인해주세요.',
+        details: lastError instanceof Error ? lastError.message : String(lastError)
+      },
+      { status: 500 }
+    )
   } catch (error) {
     console.error('Error:', error)
     return NextResponse.json(
