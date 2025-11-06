@@ -45,7 +45,7 @@ body {
   color: #333;
 }
 
-.input-group input {
+.input-group input[type="text"] {
   width: 100%;
   padding: 0.75rem 1rem;
   border: 2px solid #e0e0e0;
@@ -54,9 +54,73 @@ body {
   transition: border-color 0.3s;
 }
 
-.input-group input:focus {
+.input-group input[type="text"]:focus {
   outline: none;
   border-color: #667eea;
+}
+
+.mode-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.mode-option {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: white;
+}
+
+.mode-option:hover {
+  border-color: #667eea;
+  background: #f8f9ff;
+}
+
+.mode-option.active {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.mode-option input[type="radio"] {
+  margin-right: 0.75rem;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.mode-icon {
+  font-size: 2rem;
+  margin-right: 0.75rem;
+}
+
+.mode-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mode-text strong {
+  font-size: 1rem;
+  color: #333;
+}
+
+.mode-text small {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: normal;
+}
+
+@media (max-width: 768px) {
+  .mode-selector {
+    grid-template-columns: 1fr;
+  }
 }
 
 .button {
